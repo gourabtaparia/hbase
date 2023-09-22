@@ -1097,12 +1097,13 @@ public final class RequestConverter {
    * @return a ModifyTableRequest
    */
   public static ModifyTableRequest buildModifyTableRequest(final TableName tableName,
-    final TableDescriptor tableDesc, final long nonceGroup, final long nonce) {
+    final TableDescriptor tableDesc, final long nonceGroup, final long nonce, final boolean lazyMode) {
     ModifyTableRequest.Builder builder = ModifyTableRequest.newBuilder();
     builder.setTableName(ProtobufUtil.toProtoTableName(tableName));
     builder.setTableSchema(ProtobufUtil.toTableSchema(tableDesc));
     builder.setNonceGroup(nonceGroup);
     builder.setNonce(nonce);
+    builder.setLazyMode(lazyMode);
     return builder.build();
   }
 

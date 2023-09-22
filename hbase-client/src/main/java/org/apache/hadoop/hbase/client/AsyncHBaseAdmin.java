@@ -153,7 +153,12 @@ class AsyncHBaseAdmin implements AsyncAdmin {
 
   @Override
   public CompletableFuture<Void> modifyTable(TableDescriptor desc) {
-    return wrap(rawAdmin.modifyTable(desc));
+    return modifyTable(desc, false);
+  }
+
+  @Override
+  public CompletableFuture<Void> modifyTable(TableDescriptor desc, boolean lazyMode) {
+    return wrap(rawAdmin.modifyTable(desc, lazyMode));
   }
 
   @Override

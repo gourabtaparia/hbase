@@ -692,9 +692,13 @@ class RawAsyncHBaseAdmin implements AsyncAdmin {
 
   @Override
   public CompletableFuture<Void> modifyTable(TableDescriptor desc) {
+    return modifyTable(desc, false);
+  }
+  @Override
+  public CompletableFuture<Void> modifyTable(TableDescriptor desc, boolean lazyMode) {
     return this.<ModifyTableRequest, ModifyTableResponse> procedureCall(desc.getTableName(),
       RequestConverter.buildModifyTableRequest(desc.getTableName(), desc, ng.getNonceGroup(),
-        ng.newNonce()),
+        ng.newNonce(), lazyMode),
       (s, c, req, done) -> s.modifyTable(c, req, done), (resp) -> resp.getProcId(),
       new ModifyTableProcedureBiConsumer(this, desc.getTableName()));
   }

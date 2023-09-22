@@ -1369,7 +1369,8 @@ public class HMaster extends HBaseServerBase<MasterRpcServices> implements Maste
     TableDescriptor newMetaDesc = TableDescriptorBuilder.newBuilder(metaDescriptor)
       .setColumnFamily(FSTableDescriptors.getTableFamilyDescForMeta(conf))
       .setColumnFamily(FSTableDescriptors.getReplBarrierFamilyDescForMeta()).build();
-    long pid = this.modifyTable(TableName.META_TABLE_NAME, () -> newMetaDesc, 0, 0, false);
+    long pid = this.modifyTable(TableName.META_TABLE_NAME, () -> newMetaDesc, 0,
+      0, false, false);
     int tries = 30;
     while (
       !(getMasterProcedureExecutor().isFinished(pid)) && getMasterProcedureExecutor().isRunning()
@@ -2585,7 +2586,7 @@ public class HMaster extends HBaseServerBase<MasterRpcServices> implements Maste
 
         return TableDescriptorBuilder.newBuilder(old).setColumnFamily(column).build();
       }
-    }, nonceGroup, nonce, true);
+    }, nonceGroup, nonce, true, false);
   }
 
   /**
@@ -2612,7 +2613,7 @@ public class HMaster extends HBaseServerBase<MasterRpcServices> implements Maste
 
         return TableDescriptorBuilder.newBuilder(old).modifyColumnFamily(descriptor).build();
       }
-    }, nonceGroup, nonce, true);
+    }, nonceGroup, nonce, true, false);
   }
 
   @Override
@@ -2663,7 +2664,7 @@ public class HMaster extends HBaseServerBase<MasterRpcServices> implements Maste
         }
         return TableDescriptorBuilder.newBuilder(old).removeColumnFamily(columnName).build();
       }
-    }, nonceGroup, nonce, true);
+    }, nonceGroup, nonce, true, false);
   }
 
   @Override
@@ -2762,7 +2763,7 @@ public class HMaster extends HBaseServerBase<MasterRpcServices> implements Maste
 
   private long modifyTable(final TableName tableName,
     final TableDescriptorGetter newDescriptorGetter, final long nonceGroup, final long nonce,
-    final boolean shouldCheckDescriptor) throws IOException {
+    final boolean shouldCheckDescriptor, final boolean lazyMode) throws IOException {
     return MasterProcedureUtil
       .submitProcedure(new MasterProcedureUtil.NonceProcedureRunnable(this, nonceGroup, nonce) {
         @Override
@@ -2781,7 +2782,7 @@ public class HMaster extends HBaseServerBase<MasterRpcServices> implements Maste
           // checks. This will block only the beginning of the procedure. See HBASE-19953.
           ProcedurePrepareLatch latch = ProcedurePrepareLatch.createBlockingLatch();
           submitProcedure(new ModifyTableProcedure(procedureExecutor.getEnvironment(),
-            newDescriptor, latch, oldDescriptor, shouldCheckDescriptor));
+            newDescriptor, latch, oldDescriptor, shouldCheckDescriptor, lazyMode));
           latch.await();
 
           getMaster().getMasterCoprocessorHost().postModifyTable(tableName, oldDescriptor,
@@ -2798,14 +2799,14 @@ public class HMaster extends HBaseServerBase<MasterRpcServices> implements Maste
 
   @Override
   public long modifyTable(final TableName tableName, final TableDescriptor newDescriptor,
-    final long nonceGroup, final long nonce) throws IOException {
+    final long nonceGroup, final long nonce, final boolean lazyMode) throws IOException {
     checkInitialized();
     return modifyTable(tableName, new TableDescriptorGetter() {
       @Override
       public TableDescriptor get() throws IOException {
         return newDescriptor;
       }
-    }, nonceGroup, nonce, false);
+    }, nonceGroup, nonce, false, lazyMode);
 
   }
 
